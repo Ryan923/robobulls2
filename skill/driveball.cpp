@@ -32,36 +32,34 @@ namespace Skill
 
 //		mySkillSequence.executeOn(robot);
 //	}
-    DriveBall::DriveBall(Point targetPoint, double movingDirection)
+    DriveBall::DriveBall(Point targetPoint, double finalDirection)
     {
         targetPosition = targetPoint;
-        direction = movingDirection;
+        direction = finalDirection;
         state = initial;
     }
 
     bool DriveBall::perform(Robot* robot)
     {
-//        cout<< "driving ball"<<endl;
-//        Point ballPosition = GameModel::getModel()->getBallPoint();
+//        Point goal(-3000, 0);
+        GameModel *gm = GameModel::getModel();
 
         switch(state)
         {
         case initial:
             cout<<"Drive ball initial state"<<endl;
             state = moveTowardBall;
-            skill = new GoToPositionWithOrientation (GameModel::getModel()->getBallPoint(), direction);
+            skill = new GoToPositionWithOrientation (gm->getBallPoint(), Measurments::angleBetween(gm->getBallPoint(), targetPosition));
             break;
         case moveTowardBall:
             cout <<"Move toward the ball"<<endl;
-            if(Measurments::isClose(robot->getRobotPosition(), GameModel::getModel()->getBallPoint(), 110)) {
+            if(Measurments::isClose(robot->getRobotPosition(), gm->getBallPoint(), 110)) {
                 state = driveBall;
                 skill = new GoToPositionWithOrientation (targetPosition, direction);
             }
-            else if(!Measurments::isClose(robot->getRobotPosition(), GameModel::getModel()->getBallPoint(), 110)) {
+            else if(!Measurments::isClose(robot->getRobotPosition(), gm->getBallPoint(), 400)) {
                 state = moveTowardBall;
-                skill = new GoToPositionWithOrientation (GameModel::getModel()->getBallPoint(), direction);
-//                ClosedLoopControl clb;
-//                clb.setVelMultiplier(0.5);
+                skill = new GoToPositionWithOrientation (gm->getBallPoint(), Measurments::angleBetween(gm->getBallPoint(), targetPosition));
             }
             break;
         case driveBall:
@@ -70,33 +68,27 @@ namespace Skill
                 state = idiling;
                 skill = new Stop();
             }
-            else if(!Measurments::isClose(robot->getRobotPosition(), targetPosition, 110)) {
-                state = driveBall;
-                skill = new GoToPositionWithOrientation (targetPosition, direction);
-            }
-            else if(!Measurments::isClose(robot->getRobotPosition(), GameModel::getModel()->getBallPoint(), 110)) {
+            else if(!Measurments::isClose(robot->getRobotPosition(), gm->getBallPoint(), 400)) {
                 state = moveTowardBall;
-                skill = new GoToPositionWithOrientation (GameModel::getModel()->getBallPoint(), direction);
+                skill = new GoToPositionWithOrientation (gm->getBallPoint(), Measurments::angleBetween(gm->getBallPoint(), targetPosition));
             }
             break;
         case idiling:
             cout<<"stoping"<<endl;
-            if(!Measurments::isClose(robot->getRobotPosition(), GameModel::getModel()->getBallPoint(), 110)) {
+            if(!Measurments::isClose(robot->getRobotPosition(), gm->getBallPoint(), 110)) {
                 state = moveTowardBall;
-                skill = new GoToPositionWithOrientation (GameModel::getModel()->getBallPoint(), direction);
+                skill = new GoToPositionWithOrientation (gm->getBallPoint(), Measurments::angleBetween(gm->getBallPoint(), targetPosition));
+            }
+            else if(Measurments::isClose(robot->getRobotPosition(), gm->getBallPoint(), 400) && !Measurments::isClose(robot->getRobotPosition(), targetPosition, 110))
+            {
+                state = driveBall;
+                skill = new GoToPositionWithOrientation (targetPosition, direction);
             }
             break;
         }
 
         skill->perform(robot);
 
-//            stop.perform(robot);
-//			return true;
-//            if(!Measurments::isClose(robot->getRobotPosition(), ballPosition, 110)) {
-//                state = moveTowardBall;
-//            }
-//            break;
-//        }
 		
         return false;
     }
